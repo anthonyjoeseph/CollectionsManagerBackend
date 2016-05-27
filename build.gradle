@@ -1,0 +1,70 @@
+//basically: scalatra, flyway, and tomcat
+
+apply plugin: 'java'
+apply plugin: 'scala'
+apply plugin: 'eclipse'
+apply plugin: 'war'
+
+def env_ = project.hasProperty("env") ? env : "dvp" 
+
+def dbUrl = this."${env_}.collections.dbUrl"
+def dbUser =  this."${env_}.collections.dbUser"
+def dbPassword = this."${env_}.collections.dbPassword"
+
+buildscript {
+     repositories {
+         mavenLocal()
+         mavenCentral()
+         jcenter()
+    }
+    
+    dependencies {
+        classpath 'org.flywaydb:flyway-gradle-plugin:3.2.1'
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.2.4'
+    }
+}
+
+apply plugin: 'com.bmuschko.tomcat'
+apply plugin: 'org.flywaydb.flyway'
+
+
+flyway {
+    url = 'jdbc:h2:file:./target/foobar'
+    user = 'sa'
+}
+
+repositories{
+    mavenCentral()
+}
+
+dependencies{
+    def tomcatVersion = '7.0.59'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+           "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile "org.scala-lang:scala-library:2.11.2"
+    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
+    testCompile "junit:junit:4.11"
+}
+
+flyway{
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+}
+
+tomcat{
+    contextPath = ''
+    httpPort = 8079
+    httpsPort = 8080
+    enableSSL = true
+}
+
+tomcatRun{
+    dependsOn 'flywayMigrate'
+}
+
+test{
+    dependsOn "flywayMigrate"
+}

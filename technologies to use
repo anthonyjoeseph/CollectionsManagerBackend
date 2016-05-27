@@ -1,0 +1,14 @@
+Backend:
+gradle
+tomcat
+scalatra
+jwt
+flyway
+docker
+
+
+Frontend:
+angular.js
+gulp
+material
+bower

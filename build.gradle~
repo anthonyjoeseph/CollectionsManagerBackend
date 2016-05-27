@@ -1,0 +1,62 @@
+apply plugin: 'scala'
+apply plugin: 'eclipse'
+apply plugin: 'war'
+
+def env_ = project.hasProperty("env") ? env : "dvp" 
+
+def dbUrl = this."${env_}.collections.dbUrl"
+def dbUser =  this."${env_}.collections.dbUser"
+def dbPassword = this."${env_}.collections.dbPassword"
+
+buildScript{
+    repositories{
+        mavenCentral()
+    	mavenLocal()
+    	jcenter()
+    }
+    dependencies{
+	classpath 'com.bmuschko:gradle-tomcat-plugin:2.2.4'
+    }
+}
+
+apply plugin: 'com.bmuschko.tomcat'
+apply plugin: 'org.flywaydb.flyway'
+
+
+repositories{
+    mavenCentral()
+}
+
+dependencies{
+    def tomcatVersion = '7.0.59'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+           "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+           "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile "org.scala-lang:scala-library:2.11.2"
+    testCompile "junit:junit:4.11"
+}
+
+tomcat{
+    dependsOn 'flywayMigrate'
+    contextPath = ''
+    httpPort = 8079
+    httpsPort = 8080
+    enableSSL = true
+}
+
+flyway{
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+}
+
+test{
+    dependsOn "flywayMigrate"
+}
+
+task run(type: JavaExec, dependsOn: classes) {
+    main = 'Main'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
